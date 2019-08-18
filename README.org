@@ -1,0 +1,14 @@
+# GGL
+
+GenomeGeometricLearning
+Adapted PyTorch implementation of [[https://papers.nips.cc/paper/7213-poincare-embeddings-for-learning-hierarchical-representations][Poincaré Embeddings for Learning Hierarchical Representations]]
+
+** Installation
+Simply clone this repository via
+#+BEGIN_SRC sh
+  git clone https://github.com/intelligentbiocomputinglab/GGL.git
+  cd poincare-embeddings
+  conda env create -f environment.yml
+  source activate poincare
+  python setup.py build_ext --inplace
+#+END_SRC
