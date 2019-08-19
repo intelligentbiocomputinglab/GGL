@@ -135,6 +135,8 @@ def main():
     th.set_default_tensor_type('torch.DoubleTensor')
     # set device
     device = th.device(f'cuda:{opt.gpu}' if opt.gpu >= 0 else 'cpu')
+    print(torch.cuda.get_device_name(opt.gpu), torch.cuda.is_available())
+    
 
     # select manifold to optimize on
     manifold = MANIFOLDS[opt.manifold](debug=opt.debug, max_norm=opt.maxnorm)
@@ -179,7 +181,6 @@ def main():
     state = checkpoint.initialize({'epoch': 0, 'model': model.state_dict()})
     model.load_state_dict(state['model'])
     model.to(device)
-    data.to(device)
     opt.epoch_start = state['epoch']
     
     ### Justin:
