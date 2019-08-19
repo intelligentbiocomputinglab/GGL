@@ -178,6 +178,8 @@ def main():
     # get state from checkpoint
     state = checkpoint.initialize({'epoch': 0, 'model': model.state_dict()})
     model.load_state_dict(state['model'])
+    model.to(device)
+    data.to(device)
     opt.epoch_start = state['epoch']
     
     ### Justin:
