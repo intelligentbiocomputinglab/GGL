@@ -50,7 +50,7 @@ class GGLLoader():
 
         #with Pool(processes=8) as pool: #TODO: multiprocessing memory sync issue
         for i, j in itertools.product(range(self.data.shape[0]), range(self.data.shape[0])):
-            if i == j: continue
+            if i == j or (abs(self.data[i, 0] - self.data[j, 0]) <= 4): continue #Remove trivial connections
             distance = metric(self.data[i, 1:3], self.data[j, 1:3])
             self._update_edge(self.data[i, 0], self.data[j, 0], distance, cutoff=cutoff)
 
@@ -74,16 +74,42 @@ class GGLLoader():
         self.mst = nx.minimum_spanning_tree(self.graph)
         return self.mst
 
-def save_graph_vis(graph, path='./test.png', cutoff=None):
+    def centrality(self, mode='betweenness'):
+        """
+        Compute centrality within the interaction network.
+        """
+        if mode == 'betweenness':
+            cent = nx.algorithms.centrality.betweenness_centrality(self.graph, weight='weight')
+        elif mode == 'eigenvector':
+            cent = nx.algorithms.centrality.eigenvector_centrality(self.graph, weight='weight')
+
+        nx.set_node_attributes(self.graph, cent, 'centrality')
+
+        return self.graph
+
+
+def save_graph(G, path='./graph.gml'):
+    nx.readwrite.gml.write_gml(G, path)
+
+def load_graph(path):
+    return nx.readwrite.gml.read_gml(path)
+
+def save_graph_vis(graph, path='./test.png', cutoff=None, centrality=False):
 
     plt.figure(num=None, figsize=(20, 20), dpi=80)
     fig = plt.figure(1)
     plt.axis('on')
     pos = nx.get_node_attributes(graph, 'pos')
     weights = [d['weight'] for (u, v, d) in graph.edges(data=True)]
-    nx.draw_networkx_nodes(graph, pos=pos, node_color='#A0CBE2')
-    nx.draw(graph, pos=pos, edge_color=weights,
-            edge_cmap=plt.cm.viridis, edge_vin=0, edge_vmax=cutoff)
+    if not centrality:
+        nx.draw_networkx_nodes(graph, pos=pos, node_color='#A0CBE2')
+    else:
+        cents = [d['centrality'] for (n, d) in graph.nodes(data=True)]
+        nx.draw_networkx_nodes(graph, pos=pos, node_color=cents,\
+                vmin=0, vmax=max(cents), cmap=plt.cm.PuRd, alpha=0.8)
+
+    nx.draw_networkx_edges(graph, pos=pos, edge_color=weights, \
+            edge_cmap=plt.cm.magma, edge_vmin=0, edge_vmax=cutoff, alpha=0.3)
     plt.savefig(path, boox_inches="tight")
     pylab.close()
     del fig
@@ -91,8 +117,11 @@ def save_graph_vis(graph, path='./test.png', cutoff=None):
 
 if __name__ == '__main__':
 
-    test_loader = GGLLoader('test', DEBUG=False)
-    test_graph = test_loader.to_graph(cutoff=1)
-    save_graph_vis(test_graph, cutoff=1)
-    test_mst = test_loader.mst()
-    save_graph_vis(test_mst, path='./test_mst.png', cutoff=1)
+    for sample in ['LG', 'LG-cancer', 'PA', 'PA-cancer']:
+        loader = GGLLoader(sample, DEBUG=False)
+        graph = loader.to_graph(cutoff=0.5)
+        save_graph(graph, 'data/%s.raw.gml' % sample)
+        G = loader.centrality('betweenness')
+        save_graph(G, 'data/%s.BC.gml' % sample)
+        #test_mst = test_loader.mst()
+        save_graph_vis(G, path='vis/%s_BC.png' % sample, cutoff=0.5, centrality=True)
