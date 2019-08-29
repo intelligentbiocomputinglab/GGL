@@ -79,9 +79,11 @@ class GGLLoader():
         Compute centrality within the interaction network.
         """
         if mode == 'betweenness':
-            cent = nx.algorithms.centrality.betweenness_centrality(self.graph, weight='weight')
+            cent = nx.algorithms.centrality.betweenness_centrality(self.graph, weight='weight', k=250)
         elif mode == 'eigenvector':
-            cent = nx.algorithms.centrality.eigenvector_centrality(self.graph, weight='weight')
+            cent = nx.algorithms.centrality.eigenvector_centrality(self.graph, weight='weight', max_iter=1000, tol=1e-6)
+        elif mode == 'katz':
+            cent = nx.algorithms.centrality.katz_centrality(self.graph, alpha=0.5, weight='weight', max_iter=1000, tol=1e-6)
 
         nx.set_node_attributes(self.graph, cent, 'centrality')
 
@@ -106,10 +108,10 @@ def save_graph_vis(graph, path='./test.png', cutoff=None, centrality=False):
     else:
         cents = [d['centrality'] for (n, d) in graph.nodes(data=True)]
         nx.draw_networkx_nodes(graph, pos=pos, node_color=cents,\
-                vmin=0, vmax=max(cents), cmap=plt.cm.PuRd, alpha=0.8)
+                vmin=0, vmax=max(cents), cmap=plt.cm.PuRd, alpha=0.9)
 
     nx.draw_networkx_edges(graph, pos=pos, edge_color=weights, \
-            edge_cmap=plt.cm.magma, edge_vmin=0, edge_vmax=cutoff, alpha=0.3)
+            edge_cmap=plt.cm.magma, edge_vmin=0, edge_vmax=cutoff, alpha=0.05)
     plt.savefig(path, boox_inches="tight")
     pylab.close()
     del fig
@@ -118,10 +120,9 @@ def save_graph_vis(graph, path='./test.png', cutoff=None, centrality=False):
 if __name__ == '__main__':
 
     for sample in ['LG', 'LG-cancer', 'PA', 'PA-cancer']:
-        loader = GGLLoader(sample, DEBUG=False)
-        graph = loader.to_graph(cutoff=0.5)
-        save_graph(graph, 'data/%s.raw.gml' % sample)
-        G = loader.centrality('betweenness')
-        save_graph(G, 'data/%s.BC.gml' % sample)
+        #loader = GGLLoader(sample, DEBUG=False)
+        #loader.graph = load_graph('data/%s.raw.gml' % sample)
+        #G = loader.centrality('betweenness')
+        G = load_graph('data/%s.BC.gml' % sample)
         #test_mst = test_loader.mst()
         save_graph_vis(G, path='vis/%s_BC.png' % sample, cutoff=0.5, centrality=True)
